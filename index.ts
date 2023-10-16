@@ -102,16 +102,15 @@ interface RegistryOptions {
     /** the registry key */ key: string,
     /** the optional registry hive architecture ('x86' or 'x64'; only valid on Windows 64 Bit Operating Systems) */arch?: Arch
 }
-export default class Registry {
+export class Registry {
     /** Creates a registry object, which provides access to a single registry key.
-     * Note: This class is returned by a call to ```require('winreg')```.
      *
      * @public
      * 
      * @param {RegistryOptions} options - the options
      *
      * @example
-     * let Registry = require('winreg')
+     * import { Registry } from 'winreg2';
      * autoStartCurrentUser = new Registry({
      *       hive: Registry.HKCU,
      *       key:  '\\Software\\Microsoft\\Windows\\CurrentVersion\\Run'

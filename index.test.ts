@@ -1,5 +1,5 @@
 import { describe, expect, test } from '@jest/globals';
-import Registry, { Hive, RegType } from '.';
+import { Registry, Hive, RegType } from './index';
 describe('winreg', () => {
 
     test('running on Windows', () => expect(process.platform).toBe('win32'));

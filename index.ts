@@ -52,8 +52,10 @@ const
     /* Registry item pattern */
     ITEM_PATTERN = /^(.*)\s(REG_SZ|REG_MULTI_SZ|REG_EXPAND_SZ|REG_DWORD|REG_QWORD|REG_BINARY|REG_NONE)\s+([^\s].*)$/;
 
-/** Add quotes around `str` if `str` contains a whitespacer */
-function quoteIfNeeded(str: string) { return str.includes(' ') ? `"${str}"` : str; }
+/** Escape backticks */
+function quoteAround(str: string) {
+    return `"${str.replace(/`/g, "``").replace(/\$/g, "`$").replace(/[\u0000-\u001F\u007F-\u009F]/g,"")}"`
+}
 
 class ProcessUncleanExitError extends Error {
 
@@ -125,7 +127,7 @@ export class Registry {
 
         this.key = options.key || '';
 
-        this.path = quoteIfNeeded((this.host.length == 0 ? '' : '\\\\' + this.host + '\\') + this.hive + this.key);
+        this.path = quoteAround((this.host.length == 0 ? '' : '\\\\' + this.host + '\\') + this.hive + this.key);
 
         this.arch = options.arch;
 
@@ -197,7 +199,9 @@ export class Registry {
         //     });
         // });
         return await new Promise((res, rej) => {
-            let child = exec([Registry.REG_PATH, ...args].join(' '), (err, stdout, stderr) => {
+            let regCommand = 'chcp 65001; ' + [Registry.REG_PATH, ...args].join(' ');
+            // console.log(`Will run ${regCommand}`);
+            let child = exec(regCommand, {shell:"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"}, (err, stdout, stderr) => {
                 if (err) {
                     rej(mkErrorMsg(args[0], child.exitCode || 0, { stdout, stderr }));
                 }
@@ -264,7 +268,7 @@ export class Registry {
         if (name == '')
             args.push('/ve');
         else
-            args = args.concat(['/v', quoteIfNeeded(name)]);
+            args = args.concat(['/v', quoteAround(name)]);
 
         let output = await this.runCommand(args),
             items = output
@@ -296,9 +300,9 @@ export class Registry {
 
         let args = ['ADD', this.path];
         if (name == '') args.push('/ve');
-        else args = args.concat(['/v', quoteIfNeeded(name)]);
+        else args = args.concat(['/v', quoteAround(name)]);
 
-        args = args.concat(['/t', type, '/d', quoteIfNeeded(value), '/f']);
+        args = args.concat(['/t', type, '/d', quoteAround(value), '/f']);
 
         await this.runCommand(args);
     }
@@ -308,7 +312,7 @@ export class Registry {
      * Note: This key must be already existing.
      * @param {string} name - the value name, use {@link Registry.DEFAULT_VALUE} or an empty string for the default value.
      */
-    async remove(name: string){ await this.runCommand(name ? ['DELETE', this.path, '/f', '/v', name] : ['DELETE', this.path, '/f', '/ve']); }
+    async remove(name: string){ await this.runCommand(name ? ['DELETE', this.path, '/f', '/v', quoteAround(name)] : ['DELETE', this.path, '/f', '/ve']); }
 
     /** Remove all subkeys and values (including the default value) from this registry key. */
     async clear(){ await this.runCommand(['DELETE', this.path, '/f', '/va']); }
